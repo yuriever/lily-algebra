@@ -80,6 +80,12 @@ complementFromLast[list1_,list2_] :=
         Fold[fun,Reverse@list1,Tally@list2]//Reverse
     ];
 
+symbolAdd[symbols__Symbol] :=
+    Last@{symbols};
+    
+symbolDelete[symbols__Symbol] :=
+    Null;
+
 echo//Attributes = {HoldAll};
 echo[code_] :=
     Module[ {codeResult},
@@ -179,7 +185,21 @@ memberStructureInternal = <|
         "instanceReset"->True,
         "instanceAdd"->Or,
         "instanceDelete"->And,
-        "memberStructureUsage"->"Boolean value: add is Or and Delete is And."
+        "memberStructureUsage"->"Boolean value: add is Or and delete is And."
+    |>,
+    "string"-><|
+        "instanceDefine"->"",
+        "instanceReset"->"",
+        "instanceAdd"->StringJoin,
+        "instanceDelete"->StringDelete,
+        "memberStructureUsage"->"string: add is StringJoin and delete is StringDelete."
+    |>,
+    "symbol"-><|
+        "instanceDefine"->Null,
+        "instanceReset"->Null,
+        "instanceAdd"->symbolAdd,
+        "instanceDelete"->symbolDelete,
+        "memberStructureUsage"->"symbol: add is replacing and delete is replacing with Null."
     |>,
     "listUnsorted"-><|
         "instanceDefine"->{},
