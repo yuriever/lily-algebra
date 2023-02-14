@@ -10,13 +10,13 @@ The documentation can also be found on [my website](https://yuriever.github.io/s
 
 * Object:
 
-    * class: compounded algebra
+    * class: `"(compounded) algebra"`
 
-    * instance: algebra
+    * instance: `"algebra"`
 
-    * member: operator, relation, printing
+    * member: `"operator", "relation", "printing"`
 
-## Class methods
+## Methods
 
 * `algebraDefine[algList_|alg_]` - define and initiate algebras.
 
@@ -61,7 +61,7 @@ The documentation can also be found on [my website](https://yuriever.github.io/s
 
 | Name  | System operator occupation    | Meaning   |
 | :-    | :-                            | :-        |
-| `"multiplication"`   | `NonCommutativeMultiply` | associativity, linearity over $\mathbb{C}$ |
+| `"multiplication"`   | `NonCommutativeMultiply` | associativity, linearity over $\C$ |
 | `"tensorProduct"`    | `CircleTimes`            | strict tensor category with identity `id` |
 | `"conjugate"`        | `SuperDagger`            | dagger structure |
 | `"comultiplication"` | `CircleTimes`            | coassociativity (**TODO**) |
@@ -121,15 +121,15 @@ Table of shortcuts:
 
     * `operatorExp[op_,orderMax_,parameter_:1]` - exponential of operators upto the max order $n$, $[e^{t x}]_n=\sum_{i=0}^{n}\frac{t^i}{i!} x^i$.
 
-* `adjoint[op_,order_:1][expr_]` - the adjoint action of Lie algebra, $\\operatorname{ad}^n_x\cdot y$.
+* `adjoint[op_,order_:1][expr_]` - the adjoint action of Lie algebra, $\ad^n_x\cdot y$.
 
-    * `adjointExp[op_,orderMax_,parameter_:1][expr_]` - the adjoint action of Lie group upto the max order $n$, $[\operatorname{Ad}_{x}(t)]_n\cdot y=[e^{t x}]_n\, y\, [e^{-t x}]_n$.
+    * `adjointExp[op_,orderMax_,parameter_:1][expr_]` - the adjoint action of Lie group upto the max order $n$, $[\Ad_{x}(t)]_n\cdot y=[e^{t x}]_n\, y\, [e^{-t x}]_n$.
 
 ### Inner product
 
 This functionality needs the algebra `"conjugate"`.
 
-* `innerProduct[_,_]` - inner product of two vectors. inner product of two vectors. For operators $x,y$ this gives $x^{\dagger}\cdot y$.
+* `innerProduct[_,_]` - inner product of two vectors. For operators $x,y$ this gives $x^{\dagger}\cdot y$.
 
 ### Tensor product
 

@@ -33,23 +33,23 @@ algebraDefine::usage =
 algebraDefineQ::usage = 
     "check whether an algebra is defined.";
 algebraDefineInternal::usage = 
-    "define the internal algebras";
+    "define the internal algebras.";
 
 algebraDefault::usage = 
     "set default algebras to build the compounded algebra.";
 
 algebraReset::usage = 
-    "reset the algebras";
+    "reset the algebras.";
 algebraUnset::usage = 
-    "unset the algebras";
+    "unset the algebras.";
 
 algebraAdd::usage = 
-    "add to the algebras";
+    "add to the algebras.";
 algebraDelete::usage = 
-    "delete from the algebras";
+    "delete from the algebras.";
 
 algebraShow::usage = 
-    "show the algebra";
+    "show the algebra.";
 
 operator::usage = 
     "return the operators/generators.";
@@ -71,7 +71,7 @@ algebraEquation::usage =
     "return a formatted equation with the input at RHS and the simplified one at LHS.";
     
 scalarQ::usage =
-    "check whether the expression is C-number by the default algebra";
+    "check whether the expression is C-number by the default algebra.";
 operatorQ::usage =
     "check whether the expression is Q-number by the default algebra.";
 generatorQ::usage =
@@ -83,19 +83,19 @@ generatorQ::usage =
 
 
 algS::usage = 
-    "algebraSimplify";
+    "algebraSimplify.";
 algP::usage = 
-    "algebraPrint";
+    "algebraPrint.";
 algSP::usage =
-    "algebraSimplify + algebraPrint";
+    "algebraSimplify + algebraPrint.";
 algSS::usage =
-    "algebraSimplify + FullSimplify";
+    "algebraSimplify + FullSimplify.";
 algSSP::usage =
-    "algebraSimplify + FullSimplify + algebraPrint";
+    "algebraSimplify + FullSimplify + algebraPrint.";
 algE::usage =
-    "algebraEquation";
+    "algebraEquation.";
 algES::usage =
-    "algebraEquation + FullSimplify";
+    "algebraEquation + FullSimplify.";
 algEqualQ::usage =
     "x==y for Q-numbers.";
 algSameQ::usage =
@@ -110,7 +110,7 @@ comm::usage =
     "commutator.";
 anticomm::usage = 
     "anti-commutator.";    
-jacobiIdentity::usage 
+jacobiIdentity::usage =
     "the Jacobi identity.";
 commSim::usage = 
     "simplify the commutator.";
@@ -136,7 +136,7 @@ operatorExp::usage =
 
 
 innerProduct::usage =
-    "inner product of two vectors, A \[CircleTimes] A -> k";
+    "inner product of two vectors, A \[CircleTimes] A -> k.";
 
 
 (* ::Subsection:: *)
@@ -158,9 +158,9 @@ tensorThread::usage =
 
 
 scalarSeparate::usage =
-    "separate scalars and operators";
+    "separate scalars and operators.";
 scalarExtract::usage =
-    "extract scalars";
+    "extract scalars.";
 
 
 (* ::Subsection:: *)
@@ -253,7 +253,7 @@ setArgumentCompletion`kernel[functionList:{___},{args___}] :=
 
 
 algebraInternal::usage = 
-    "internal algebra relations";
+    "internal algebra relations.";
 algebraInternal[] = 
     {"conjugate","tensorProduct","comultiplication"};
 
@@ -269,9 +269,9 @@ NonCommutativeMultiply//Attributes = {Flat,OneIdentity};
 algebraInternal["multiplication"] = <|
     "operator"->{},
     "relation"->{
-        x_**y_/;scalarQ[x]||scalarQ[y]:>x y,
-        (k_?scalarQ x_)**y_:>k x**y,
-        x_**(k_?scalarQ y_):>k x**y,
+        x_**y_/;scalarQ[x]||scalarQ[y]:>x*y,
+        (k_?scalarQ*x_)**y_:>k*x**y,
+        x_**(k_?scalarQ*y_):>k*x**y,
         (x_+y_)**z_:>x**z+y**z,
         z_**(x_+y_):>z**x+z**y
     },
@@ -290,9 +290,9 @@ CircleTimes//Attributes = {Flat,OneIdentity};
 algebraInternal["tensorProduct"] = <|
     "operator"->{id},
     "relation"->{
-        CircleTimes[x_,k_?scalarQ y_.]:>
+        CircleTimes[x_,k_?scalarQ*y_.]:>
             k CircleTimes[x,y],
-        CircleTimes[k_?scalarQ x_.,y_]:>
+        CircleTimes[k_?scalarQ*x_.,y_]:>
             k CircleTimes[x,y],
         CircleTimes[x_+y_,z_]:>
             CircleTimes[x,z]+CircleTimes[y,z], 
@@ -318,7 +318,7 @@ algebraInternal["conjugate"] = <|
     "operator"->{},
     "relation"->{
         SuperDagger[1]:>1,
-        SuperDagger[k_?scalarQ x_.]:>
+        SuperDagger[k_?scalarQ*x_.]:>
             Conjugate[k] SuperDagger[x],
         SuperDagger[x_+y_]:>
             SuperDagger[x]+SuperDagger[y],
@@ -412,27 +412,32 @@ algebraReset[algList:patternAlgList] :=
 algebraReset[alg:patternAlg] :=
     instanceReset["algebra",{alg}];
 
+
 algebraUnset[algList:patternAlgList] :=
     instanceUnset["algebra",algList];
 algebraUnset[alg:patternAlg] :=
     instanceUnset["algebra",{alg}];
 
+
 algebraAdd[algList:patternAlgList,assoc_] :=
     instanceAdd["algebra",algList,assoc];
+algebraAdd[alg:patternAlg,assoc_] :=
+    instanceAdd["algebra",{alg},assoc];
+
 algebraAdd[algList:patternAlgList][assoc_] :=
     instanceAdd["algebra",algList,assoc];
 algebraAdd[alg:patternAlg][assoc_] :=
     instanceAdd["algebra",{alg},assoc];
-algebraAdd[alg:patternAlg,assoc_] :=
-    instanceAdd["algebra",{alg},assoc];
+
 
 algebraDelete[algList:patternAlgList,assoc_] :=
     instanceDelete["algebra",algList,assoc];
+algebraDelete[alg:patternAlg,assoc_] :=
+    instanceDelete["algebra",{alg},assoc];
+
 algebraDelete[algList:patternAlgList][assoc_] :=
     instanceDelete["algebra",algList,assoc];
 algebraDelete[alg:patternAlg][assoc_] :=
-    instanceDelete["algebra",{alg},assoc];
-algebraDelete[alg:patternAlg,assoc_] :=
     instanceDelete["algebra",{alg},assoc];
 
 
@@ -440,16 +445,16 @@ algebraDelete[alg:patternAlg,assoc_] :=
 (*algebraShow*)
 
 
-algebraShow[alg:patternAlg] :=
+algebraShow[alg:patternAlg]/;algebraDefineQ[alg] :=
     algebraShow`kernel[
-        defaultStringTemplate["Algebra: ``"]@alg,
+        defaultStringTemplate["Algebra: \n``"]@alg,
         classData["algebra","instanceData",alg,"operator"],
         classData["algebra","instanceData",alg,"relation"],
         classData["algebra","instanceData",alg,"printing"]
     ];
 algebraShow[] :=
     algebraShow`kernel[
-        defaultStringTemplate["Default algebras: \n ``"]@classData["algebra","instanceDefaultList"],
+        defaultStringTemplate["Default algebras: \n``"]@classData["algebra","instanceDefaultList"],
         instanceDefaultData["algebra","operator"],
         instanceDefaultData["algebra","relation"],
         instanceDefaultData["algebra","printing"]
@@ -531,12 +536,12 @@ algebraSimplify[expr_,OptionsPattern[]] :=
     ];
 
 algebraSimplify`default::usage =
-    "use a top-down search strategy, similar to breadth-first search";
+    "use a top-down search strategy, similar to breadth-first search.";
 algebraSimplify`default[expr_] :=
     ReplaceRepeated[expr,instanceDefaultData["algebra","relation"]]//Simplify;
 
 algebraSimplify`caching::usage =
-    "cache the default algebra";
+    "cache the default algebra.";
 algebraSimplify`caching[expr_] :=
     Block[ {scalarQ,generatorQ,generatorList,relationList},
         generatorList =
@@ -629,11 +634,12 @@ anticommSim[x___] :=
 
 
 commDefine/:(
-    commDefine[x_,y_,OrderlessPatternSequence[
-        sign:1|-1|"boson"|"fermion"|"even"|"odd":"boson",
-        order:"normal"|"reverse":"normal"]
-    ]
-        :>result_
+    commDefine[x_,y_,
+        OrderlessPatternSequence[
+            sign:1|-1|"boson"|"fermion"|"even"|"odd":"boson",
+            order:"normal"|"reverse":"normal"
+        ]
+    ]:>result_
 ) :=
     If[ order==="normal",
         Inactive[RuleDelayed][
@@ -646,11 +652,12 @@ commDefine/:(
         ]//Activate
     ];
 commDefine/:(
-    commDefine[x_,y_,OrderlessPatternSequence[
-        sign:1|-1|"boson"|"fermion"|"even"|"odd":"boson",
-        order:"normal"|"reverse":"normal"]
-    ]
-        :>Verbatim[Condition][result_,condition_]
+    commDefine[x_,y_,
+        OrderlessPatternSequence[
+            sign:1|-1|"boson"|"fermion"|"even"|"odd":"boson",
+            order:"normal"|"reverse":"normal"
+        ]
+    ]:>Verbatim[Condition][result_,condition_]
 ) :=
     If[ order==="normal",
         Inactive[RuleDelayed][
@@ -725,7 +732,7 @@ tensorRank`kernel[op_?generatorQ] :=
 tensorRank`kernel[op:_CircleTimes|_Times] :=
     tensorRank`kernel/@List@@op//Total;
 tensorRank`kernel[op:_NonCommutativeMultiply|_Plus] :=
-    tensorRank`kernel@First@op/;Equal@@tensorRank/@List@@op;
+    tensorRank`kernel/@List@@op//Max;
 
 
 (*migrated from lily`base`threadByLength*)

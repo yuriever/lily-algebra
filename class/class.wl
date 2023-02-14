@@ -28,12 +28,12 @@ classUnset::usage =
 (*instance methods*)
 
 instanceDefaultData::usage = 
-    "store the data of default instance of class";
+    "store the data of default instance of class.";
 instanceDefault::usage = 
-    "set the instances into default";
+    "set the instances into default.";
 
 instanceDefine::usage = 
-    "define the instances";
+    "define the instances.";
 instanceReset::usage = 
     "reset the instances.";
 instanceUnset::usage = 
@@ -45,9 +45,9 @@ instanceDelete::usage =
     "delete elementlist from the instances.";
     
 instancePreIntercept::usage = 
-    "reserved function to modify the pre-process of instance methods";
+    "reserved function to modify the pre-process of instance methods.";
 instancePostIntercept::usage = 
-    "reserved function to modify the post-process of instance methods";
+    "reserved function to modify the post-process of instance methods.";
 
 
 Begin["`Private`"];
@@ -58,7 +58,7 @@ Begin["`Private`"];
 
 
 (* ::Subsection:: *)
-(*Functions from lily`base`*)
+(*lily`base`*)
 
 
 pink[expr_] :=
@@ -106,6 +106,12 @@ initiate/:(set:TagSet|TagSetDelayed)[tag_,initiate[expr_],value_] :=
 hideContext/:MakeBoxes[hideContext[expr_],form_] := 
     Block[ {Internal`$ContextMarks = False},
         MakeBoxes[expr,form]
+    ];
+
+messageHideContext//Attributes = {HoldFirst};
+messageHideContext[args__] :=
+    Block[ {Internal`$ContextMarks = False},
+        Message[args]
     ];
 
 mergeByKey[rules:{___Rule},default:_:Identity][data:{___?AssociationQ}] :=
@@ -165,44 +171,94 @@ mergeByKey[data:{__?AssociationQ},rules:{___Rule},default:_:Identity] :=
 (*Data structures of members*)
 
 
-memberStructure::usage = 
-    "pre-defined data structures of members, including listUnsorted, listSorted, setUnsorted and setSorted.";
-memberStructure = <|
+memberStructureInternal::usage = 
+    "pre-defined data structures of members, including listUnsorted, listSorted, setUnsorted, setSorted and boolean.";
+memberStructureInternal = <|
+    "boolean"-><|
+        "instanceDefine"->True,
+        "instanceReset"->True,
+        "instanceAdd"->Or,
+        "instanceDelete"->And,
+        "memberStructureUsage"->"Boolean value: add is Or and Delete is And."
+    |>,
     "listUnsorted"-><|
         "instanceDefine"->{},
         "instanceReset"->{},
         "instanceAdd"->Join,
         "instanceDelete"->complementFromLast,
-        "memberStructureUsage"->"unsortedlist; duplicates allowed"
+        "memberStructureUsage"->"unsorted list allowing duplicates."
     |>,
     "listSorted"-><|
         "instanceDefine"->{},
         "instanceReset"->{},
         "instanceAdd"->Sort@*Join,
         "instanceDelete"->Sort@*complementFromLast,
-        "memberStructureUsage"->"sortedlist; duplicates allowed"
+        "memberStructureUsage"->"sorted list allowing duplicates."
     |>,
     "setUnsorted"-><|
         "instanceDefine"->{},
         "instanceReset"->{},
         "instanceAdd"->DeleteDuplicates@*Join,
         "instanceDelete"->complement,
-        "memberStructureUsage"->"unsortedset; duplicates not allowed"
+        "memberStructureUsage"->"unsorted set without duplicates."
     |>,
     "setSorted"-><|
         "instanceDefine"->{},
         "instanceReset"->{},
         "instanceAdd"->Union,
         "instanceDelete"->Complement,
-        "memberStructureUsage"->"sortedset; duplicates not allowed"
+        "memberStructureUsage"->"sorted set without duplicates."
     |>
 |>;
+memberStructure::usage = 
+    "store the member structures.";
+memberStructure = 
+    memberStructureInternal;
+
 
 memberStructureQ::usage = 
     "check whether the structure is pre-defined.";
 memberStructureQ[structure_String] :=
     KeyExistsQ[memberStructure,structure];
 memberStructureQ[_] = False;
+
+
+memberStructureDefine::usage =
+    "define a new data structure of member.";
+memberStructureDefine::strcthasdef =
+    "the member structure `` has already been defined.";
+memberStructureDefine::strctlackkeys =
+    "the member structure `` lacks necessary keys."
+memberStructureDefine[structure_,assoc_] :=
+    Which[    
+        memberStructureQ[structure],
+            messageHideContext[memberStructureDefine::strcthasdef,structure];
+            Abort[],
+        Apply[And,KeyExistsQ[assoc,#]&/@Keys@memberStructure["boolean"]]==False,
+            messageHideContext[memberStructureDefine::strctlackkeys,structure];
+            Abort[],
+        True,
+            AssociateTo[memberStructure,structure->assoc];
+            Keys@memberStructure
+    ];
+
+
+memberStructureUnset::strctnotdef =
+    "the member structure `` has not been defined.";    
+memberStructureUnset::strctinternal =
+    "the member structure `` is internal and cannot be unset.";    
+memberStructureUnset[structure_] :=
+    Which[    
+        Not@memberStructureQ[structure],
+            messageHideContext[memberStructureUnset::strctnotdef,structure];
+            Abort[],
+        KeyExistsQ[memberStructureInternal,structure]==True,
+            messageHideContext[memberStructureUnset::strctinternal,structure];
+            Abort[],
+        True,
+            KeyDropFrom[memberStructure,structure];
+            Keys@memberStructure
+    ];
 
 
 (* ::Subsection:: *)
@@ -239,7 +295,7 @@ classDefine[class_,memberList_List,structure_:"setUnsorted",commomValue_:{}] :=
 classDefine::membernull =
     "there is empty member name.";
 classDefine::memberdup =
-    "there are duplicated member names";
+    "there are duplicated member names.";
 classDefine::classdef =
     "the class has been defined.";
 classDefine::structureundef =
@@ -359,10 +415,7 @@ instanceDefineCheck::memundef =
 
 instanceDefineCheck["ifClassNotDefined"][class_] :=
     If[ classDefineQ[class]===False,
-        Block[ {Internal`$ContextMarks = False},
-            Message[instanceDefineCheck::classundef,class];
-        ];
-        Abort[]
+        messageHideContext[instanceDefineCheck::classundef,class];
     ];
 
 instanceDefineCheck["ifInstanceNotDefined"][class_,instanceList_] :=
@@ -372,10 +425,7 @@ instanceDefineCheck["ifInstanceNotDefined"][class_,instanceList_] :=
             Keys@classData[class,"instanceData"]
         ];
         If[ instanceNotDefList=!={},
-            Block[ {Internal`$ContextMarks = False},
-                Message[instanceDefineCheck::insundef,instanceNotDefList];
-            ];
-            Abort[]
+            messageHideContext[instanceDefineCheck::insundef,instanceNotDefList];
         ];
     ];
 
@@ -386,10 +436,7 @@ instanceDefineCheck["ifInstanceHasDefined"][class_,instanceList_] :=
             Keys@classData[class,"instanceData"]
         ];
         If[ instanceHasDefList=!={},
-            Block[ {Internal`$ContextMarks = False},
-                Message[instanceDefineCheck::insdef,instanceHasDefList];
-            ];
-            Abort[]
+            messageHideContext[instanceDefineCheck::insdef,instanceHasDefList];
         ];
     ];
     
@@ -400,10 +447,7 @@ instanceDefineCheck["ifMemberNotDefined"][class_,memberList_] :=
             classData[class,"memberList"]
         ];
         If[ memberNotDefList=!={},
-            Block[ {Internal`$ContextMarks = False},
-                Message[instanceDefineCheck::memundef,memberNotDefList];
-            ];
-            Abort[]
+            messageHideContext[instanceDefineCheck::memundef,memberNotDefList];
         ];
     ];
 
@@ -413,8 +457,8 @@ instanceDefineCheck["ifMemberNotDefined"][class_,memberList_] :=
 
 
 instanceDefaultUpdate::usage = 
-    "the default instance will be updated by this private method after calling public methods of 
-    default, reset, unset, add and delete.";
+    "the default instance will be updated by this private method "<>
+    "after calling public methods of default, reset, unset, add and delete.";
 instanceDefaultUpdate[class_] :=
     Module[ {defaultInstance,functionListByStructure},
         (*prepare the add functions according to structure*)
@@ -555,7 +599,7 @@ instanceUnset`kernel[class_,instance_] :=
 instanceUnset::rmdefault =
     "the following instances `` have been removed from default.";
 instanceUnset`updateInstanceDefaultList::usage =
-    "remove the instances both in the input and the default instance list";
+    "remove the instances both in the input and the default instance list.";
 instanceUnset`updateInstanceDefaultList[class_,instanceList_] :=
     Module[ {removedDefaultList,leftDefaultList},
         removedDefaultList = Intersection[
