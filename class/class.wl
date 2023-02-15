@@ -363,8 +363,8 @@ classDefine`initiateClass[class_,memberList_,structureList_,commonValueList_,ext
                 "instanceProperty"-><||>,
                 "instanceDefaultList"->{},
                 instanceFunctionAssoc,
-                "memberList"->memberList,
                 "memberStructureData"->structureAssoc,
+                "memberList"->memberList,
                 "isClassProtected"->False
             |>
         ];
@@ -503,7 +503,9 @@ instanceDefaultUpdate[class_] :=
                 classData[class,"instanceDefaultList"]
             ]
         ]//mergeByKey[functionListByStructure];
-        (*update the default values to dataType[class,member]*)
+        (*intercept before updating to the default instance*)
+        instancePreIntercept["instanceDefaultUpdate"][class,defaultInstance];
+        (*update to the default instance*)
         AssociateTo[
             instanceDefaultData,
             class->defaultInstance
@@ -515,31 +517,6 @@ instanceDefaultUpdate[class_] :=
 (*instanceDefine*)
 
 
-(*instanceDefine[class_,instanceList_] :=
-    Module[ {},
-        (*check existence of class and instance*)
-        instanceDefineCheck["ifClassNotDefined"][class];
-        instanceDefineCheck["ifInstanceHasDefined"][class,instanceList];
-        (*kernel*)
-        instanceDefine`kernel[class,#]&/@instanceList;
-    ];
-instanceDefine`kernel[class_,instance_] :=
-    Module[ {newInstance},
-        (*initiate the new instance*)
-        newInstance = AssociationMap[
-            classData[class,"instanceCommonData",#]&,
-            classData[class,"memberList"]
-        ];
-        (*intercept before defining the new instance*)
-        instancePreIntercept["instanceDefine"][class,instance];
-        (*define the new instance*)
-        AssociateTo[
-            classData[class,"instanceData"],
-            instance->newInstance
-        ];
-        (*intercept if necessary*)
-        instancePostIntercept["instanceDefine"][class,instance];
-    ];*)
 instanceDefine[class_,instanceList_List,property_:Null] :=
     Module[ {},
         (*check existence of class and instance*)
