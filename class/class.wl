@@ -510,6 +510,8 @@ instanceDefaultUpdate[class_] :=
             instanceDefaultData,
             class->defaultInstance
         ];
+        (*intercept if necessary*)
+        instancePostIntercept["instanceDefaultUpdate"][class,defaultInstance];
     ];
 
 
@@ -555,7 +557,7 @@ instanceDefine`kernel[class_,instance_,property_:Null] :=
 instanceDefault[class_,instanceList_List] :=
     Module[ {},
         (*check existence of class and instance*)
-        instanceDefineCheck["ifTypeNotDefined"][class];
+        instanceDefineCheck["ifClassNotDefined"][class];
         instanceDefineCheck["ifInstanceNotDefined"][class,instanceList];
         (*kernel*)
         instanceDefault`kernel[class,instanceList];
@@ -583,7 +585,7 @@ instanceDefault`kernel[class_,instanceList_] :=
 instanceReset[class_,instanceList_List] :=
     Module[ {},
         (*check existence of class and instance*)
-        instanceDefineCheck["ifTypeNotDefined"][class];
+        instanceDefineCheck["ifClassNotDefined"][class];
         instanceDefineCheck["ifInstanceNotDefined"][class,instanceList];
         (*kernel*)
         instanceReset`kernel[class,#]&/@instanceList;
@@ -616,7 +618,7 @@ instanceReset`kernel[class_,instance_] :=
 instanceUnset[class_,instanceList_List] :=
     Module[ {},
         (*check existence of class and instance*)
-        instanceDefineCheck["ifTypeNotDefined"][class];
+        instanceDefineCheck["ifClassNotDefined"][class];
         instanceDefineCheck["ifInstanceNotDefined"][class,instanceList];
         instanceUnset`kernel[class,#]&/@instanceList;
         (*remove the instances in both the input and default instance list*)
@@ -667,7 +669,7 @@ instanceAdd[class_,instanceList_List,memberRuleOrAssoc_] :=
         memberAssoc = Association[memberRuleOrAssoc];
         memberList = Keys@memberAssoc;
         (*check existence of class, instance and member*)
-        instanceDefineCheck["ifTypeNotDefined"][class];
+        instanceDefineCheck["ifClassNotDefined"][class];
         instanceDefineCheck["ifInstanceNotDefined"][class,instanceList];
         instanceDefineCheck["ifMemberNotDefined"][class,memberList];
         (*kernel*)
@@ -709,7 +711,7 @@ instanceDelete[class_,instanceList_List,memberRuleOrAssoc_] :=
         memberAssoc = Association[memberRuleOrAssoc];
         memberList = Keys@memberAssoc;
         (*check existence of class, instance and member*)
-        instanceDefineCheck["ifTypeNotDefined"][class];
+        instanceDefineCheck["ifClassNotDefined"][class];
         instanceDefineCheck["ifInstanceNotDefined"][class,instanceList];
         instanceDefineCheck["ifMemberNotDefined"][class,memberList];
         (*kernel*)
