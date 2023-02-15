@@ -244,7 +244,7 @@ memberStructureQ[_] = False;
 
 
 memberStructureDefine::usage =
-    "define a new data structure of member.";
+    "define a new member structure.";
 memberStructureDefine::strcthasdef =
     "the member structure `` has already been defined.";
 memberStructureDefine::strctlackkeys =
@@ -263,6 +263,8 @@ memberStructureDefine[structure_,assoc_] :=
     ];
 
 
+memberStructureUnset::usage =
+    "unset a non-internal member structure.";
 memberStructureUnset::strctnotdef =
     "the member structure `` has not been defined.";    
 memberStructureUnset::strctinternal =
@@ -354,6 +356,7 @@ classDefine`initiateClass[class_,memberList_,structureList_,commonValueList_] :=
             class-><|
                 "instanceData"-><||>,
                 "instanceCommonData"->commonValueAssoc,
+                "instanceProperty"-><||>,
                 "instanceDefaultList"->{},
                 instanceFunctionAssoc,
                 "memberList"->memberList,
@@ -436,6 +439,7 @@ instanceDefineCheck::memundef =
 instanceDefineCheck["ifClassNotDefined"][class_] :=
     If[ classDefineQ[class]===False,
         messageHideContext[instanceDefineCheck::classundef,class];
+        Abort[]
     ];
 
 instanceDefineCheck["ifInstanceNotDefined"][class_,instanceList_] :=
@@ -446,6 +450,7 @@ instanceDefineCheck["ifInstanceNotDefined"][class_,instanceList_] :=
         ];
         If[ instanceNotDefList=!={},
             messageHideContext[instanceDefineCheck::insundef,instanceNotDefList];
+            Abort[]
         ];
     ];
 
@@ -457,6 +462,7 @@ instanceDefineCheck["ifInstanceHasDefined"][class_,instanceList_] :=
         ];
         If[ instanceHasDefList=!={},
             messageHideContext[instanceDefineCheck::insdef,instanceHasDefList];
+            Abort[]
         ];
     ];
     
@@ -468,6 +474,7 @@ instanceDefineCheck["ifMemberNotDefined"][class_,memberList_] :=
         ];
         If[ memberNotDefList=!={},
             messageHideContext[instanceDefineCheck::memundef,memberNotDefList];
+            Abort[]
         ];
     ];
 
@@ -504,7 +511,7 @@ instanceDefaultUpdate[class_] :=
 (*instanceDefine*)
 
 
-instanceDefine[class_,instanceList_] :=
+(*instanceDefine[class_,instanceList_] :=
     Module[ {},
         (*check existence of class and instance*)
         instanceDefineCheck["ifClassNotDefined"][class];
@@ -528,6 +535,35 @@ instanceDefine`kernel[class_,instance_] :=
         ];
         (*intercept if necessary*)
         instancePostIntercept["instanceDefine"][class,instance];
+    ];*)
+instanceDefine[class_,instanceList_List,property_:Null] :=
+    Module[ {},
+        (*check existence of class and instance*)
+        instanceDefineCheck["ifClassNotDefined"][class];
+        instanceDefineCheck["ifInstanceHasDefined"][class,instanceList];
+        (*kernel*)
+        instanceDefine`kernel[class,#,property]&/@instanceList;
+    ];
+instanceDefine`kernel[class_,instance_,property_:Null] :=
+    Module[ {newInstance},
+        (*initiate the new instance*)
+        newInstance = AssociationMap[
+            classData[class,"instanceDefine",#]&,
+            classData[class,"memberList"]
+        ];
+        (*intercept before defining the new instance*)
+        instancePreIntercept["instanceDefine"][class,instance,property];
+        (*define the new instance*)
+        AssociateTo[
+            classData[class,"instanceData"],
+            instance->newInstance
+        ];
+        AssociateTo[
+            classData[class,"instanceProperty"],
+            instance->property
+        ];
+        (*intercept if necessary*)
+        instancePostIntercept["instanceDefine"][class,instance,property];
     ];
 
 
@@ -535,7 +571,7 @@ instanceDefine`kernel[class_,instance_] :=
 (*instanceDefault*)
 
 
-instanceDefault[class_,instanceList_] :=
+instanceDefault[class_,instanceList_List] :=
     Module[ {},
         (*check existence of class and instance*)
         instanceDefineCheck["ifTypeNotDefined"][class];
@@ -563,7 +599,7 @@ instanceDefault`kernel[class_,instanceList_] :=
 (*instanceReset*)
 
 
-instanceReset[class_,instanceList_] :=
+instanceReset[class_,instanceList_List] :=
     Module[ {},
         (*check existence of class and instance*)
         instanceDefineCheck["ifTypeNotDefined"][class];
@@ -596,7 +632,7 @@ instanceReset`kernel[class_,instance_] :=
 (*instanceUnset*)
 
 
-instanceUnset[class_,instanceList_] :=
+instanceUnset[class_,instanceList_List] :=
     Module[ {},
         (*check existence of class and instance*)
         instanceDefineCheck["ifTypeNotDefined"][class];
@@ -613,6 +649,7 @@ instanceUnset`kernel[class_,instance_] :=
         instancePreIntercept["instanceUnset"][class,instance];
         (*unset the instance*)
         KeyDropFrom[classData[class,"instanceData"],instance];
+        KeyDropFrom[classData[class,"instanceProperty"],instance];
         (*intercept if necessary*)
         instancePostIntercept["instanceUnset"][class,instance];
     ];
@@ -644,7 +681,7 @@ instanceUnset`updateInstanceDefaultList[class_,instanceList_] :=
 (*instanceAdd*)
 
 
-instanceAdd[class_,instanceList_,memberRuleOrAssoc_] :=
+instanceAdd[class_,instanceList_List,memberRuleOrAssoc_] :=
     Module[ {memberAssoc,memberList},
         memberAssoc = Association[memberRuleOrAssoc];
         memberList = Keys@memberAssoc;
@@ -686,7 +723,7 @@ instanceAdd`kernel[class_,instance_,member_,elementList_] :=
 (*instanceDelete*)
 
 
-instanceDelete[class_,instanceList_,memberRuleOrAssoc_] :=
+instanceDelete[class_,instanceList_List,memberRuleOrAssoc_] :=
     Module[ {memberAssoc,memberList},
         memberAssoc = Association[memberRuleOrAssoc];
         memberList = Keys@memberAssoc;
