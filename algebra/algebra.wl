@@ -781,6 +781,7 @@ classDefine[
     "algebra",
     {"operator","relation","printing"},
     {"setUnsorted","setUnsorted","setUnsorted"},
+    {{},{},{}},
     {{},algebraInternal["multiplication"]["relation"],{}}
 ];
 algebraDefineInternal[];

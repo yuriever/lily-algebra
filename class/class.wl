@@ -172,6 +172,9 @@ mergeByKey[data:{__?AssociationQ},rules:{___Rule},default:_:Identity] :=
         ]
     ];
 
+associationTranspose =
+    GeneralUtilities`AssociationTranspose;
+
 
 (* ::Subsection:: *)
 (*Data structures of members*)
@@ -181,52 +184,51 @@ memberStructureInternal::usage =
     "pre-defined data structures of members, including listUnsorted, listSorted, setUnsorted, setSorted and boolean.";
 memberStructureInternal = <|
     "boolean"-><|
-        "instanceDefine"->True,
-        "instanceReset"->True,
         "instanceAdd"->Or,
         "instanceDelete"->And,
+    	"memberStructureIdentity"->True,
         "memberStructureUsage"->"Boolean value: add is Or and delete is And."
     |>,
     "string"-><|
-        "instanceDefine"->"",
-        "instanceReset"->"",
         "instanceAdd"->StringJoin,
         "instanceDelete"->StringDelete,
+        "memberStructureIdentity"->"",
         "memberStructureUsage"->"string: add is StringJoin and delete is StringDelete."
     |>,
     "symbol"-><|
-        "instanceDefine"->Null,
-        "instanceReset"->Null,
         "instanceAdd"->symbolAdd,
         "instanceDelete"->symbolDelete,
+        "memberStructureIdentity"->Null,
         "memberStructureUsage"->"symbol: add is replacing and delete is replacing with Null."
     |>,
+    "assocUnsorted"-><|
+        "instanceAdd"->Association,
+        "instanceDelete"->(KeyComplement[{##}]&),
+        "memberStructureIdentity"-><||>,
+        "memberStructureUsage"->"unsorted association without duplicates."
+    |>,
     "listUnsorted"-><|
-        "instanceDefine"->{},
-        "instanceReset"->{},
         "instanceAdd"->Join,
         "instanceDelete"->complementFromLast,
+        "memberStructureIdentity"->{},
         "memberStructureUsage"->"unsorted list allowing duplicates."
     |>,
     "listSorted"-><|
-        "instanceDefine"->{},
-        "instanceReset"->{},
         "instanceAdd"->Sort@*Join,
         "instanceDelete"->Sort@*complementFromLast,
+        "memberStructureIdentity"->{},
         "memberStructureUsage"->"sorted list allowing duplicates."
     |>,
     "setUnsorted"-><|
-        "instanceDefine"->{},
-        "instanceReset"->{},
         "instanceAdd"->DeleteDuplicates@*Join,
         "instanceDelete"->complement,
+        "memberStructureIdentity"->{},
         "memberStructureUsage"->"unsorted set without duplicates."
     |>,
     "setSorted"-><|
-        "instanceDefine"->{},
-        "instanceReset"->{},
         "instanceAdd"->Union,
         "instanceDelete"->Complement,
+        "memberStructureIdentity"->{},
         "memberStructureUsage"->"sorted set without duplicates."
     |>
 |>;
@@ -300,17 +302,17 @@ classDefineQ[class_] :=
 
 (*define data class*)
 
-classDefine[class_,memberList_List,structureList_List,commonValueList_List] :=
+classDefine[class_,memberList_List,structureList_List,commonValueList_List,extraValueList_List] :=
     Module[ {},
-        classDefine`checkInput[class,memberList,structureList,commonValueList];
-        classDefine`initiateClass[class,memberList,structureList,commonValueList];
+        classDefine`checkInput[class,memberList,structureList,commonValueList,extraValueList];
+        classDefine`initiateClass[class,memberList,structureList,commonValueList,extraValueList];
     ];
-classDefine[class_,memberList_List,structure_:"setUnsorted",commomValue_:{}] :=
-    Module[ {structureList,commonValueList},
-        structureList = ConstantArray[structure,Length@memberList];
-        commonValueList = ConstantArray[commomValue,Length@memberList];
-        classDefine`checkInput[class,memberList,structureList,commonValueList];
-        classDefine`initiateClass[class,memberList,structureList,commonValueList];
+classDefine[class_,memberList_List,structureList_List] :=
+    Module[ {commonValueList,extraValueList},
+        commonValueList = memberStructure[#,"memberStructureIdentity"]&/@structureList;
+        extraValueList = memberStructure[#,"memberStructureIdentity"]&/@structureList;
+        classDefine`checkInput[class,memberList,structureList,commonValueList,extraValueList];
+        classDefine`initiateClass[class,memberList,structureList,commonValueList,extraValueList];
     ];
 
 (*input check*)
@@ -324,7 +326,7 @@ classDefine::structureundef =
     "there is undefined data structure.";
 classDefine::lengthneq =
     "the numbers of members, structures and default values are not equal.";
-classDefine`checkInput[class_,memberList_,structureList_,commonValueList_] :=
+classDefine`checkInput[class_,memberList_,structureList_,commonValueList_,extraValueList_] :=
     Which[
         classDefineQ@class===True,
             Message[classDefine::classdef];
@@ -338,16 +340,17 @@ classDefine`checkInput[class_,memberList_,structureList_,commonValueList_] :=
         And@@memberStructureQ/@structureList===False,
             Message[classDefine::structureundef];
             Abort[],
-        Equal@@Length/@{memberList,structureList,commonValueList}===False,
+        Equal@@Length/@{memberList,structureList,commonValueList,extraValueList}===False,
             Message[classDefine::lengthneq];
             Abort[]
     ];
 
 (*initiate the class*)
-classDefine`initiateClass[class_,memberList_,structureList_,commonValueList_] :=
-    Module[ {structureAssoc,commonValueAssoc,instanceFunctionAssoc},
+classDefine`initiateClass[class_,memberList_,structureList_,commonValueList_,extraValueList_] :=
+    Module[ {structureAssoc,commonValueAssoc,extraValueAssoc,instanceFunctionAssoc},
         (*pre-store the associations*)
         commonValueAssoc = AssociationThread[memberList->commonValueList];
+        extraValueAssoc = AssociationThread[memberList->extraValueList];
         structureAssoc = AssociationThread[memberList->structureList];
         instanceFunctionAssoc = Map[memberStructure,structureAssoc]//Transpose;
         (*initiate and store the class data to classData*)
@@ -356,6 +359,7 @@ classDefine`initiateClass[class_,memberList_,structureList_,commonValueList_] :=
             class-><|
                 "instanceData"-><||>,
                 "instanceCommonData"->commonValueAssoc,
+                "instanceExtraData"->extraValueAssoc,
                 "instanceProperty"-><||>,
                 "instanceDefaultList"->{},
                 instanceFunctionAssoc,
@@ -367,7 +371,7 @@ classDefine`initiateClass[class_,memberList_,structureList_,commonValueList_] :=
         (*initiate and store the default instance of class in instanceDefaultData*)
         AssociateTo[
             instanceDefaultData,
-            class->commonValueAssoc
+            class->extraValueAssoc
         ];
     ];
 
@@ -491,9 +495,9 @@ instanceDefaultUpdate[class_] :=
         (*prepare the add functions according to structure*)
         functionListByStructure =
             classData[class,"instanceAdd"]//Map[Apply]//Normal;
-        (*construct the default values from common and input*)
+        (*construct the default values from extra and input*)
         defaultInstance = Join[
-            {classData[class,"instanceCommonData"]},
+            {classData[class,"instanceExtraData"]},
             Map[
                 classData[class,"instanceData",#]&,
                 classData[class,"instanceDefaultList"]
@@ -523,7 +527,7 @@ instanceDefine`kernel[class_,instance_] :=
     Module[ {newInstance},
         (*initiate the new instance*)
         newInstance = AssociationMap[
-            classData[class,"instanceDefine",#]&,
+            classData[class,"instanceCommonData",#]&,
             classData[class,"memberList"]
         ];
         (*intercept before defining the new instance*)
@@ -548,7 +552,7 @@ instanceDefine`kernel[class_,instance_,property_:Null] :=
     Module[ {newInstance},
         (*initiate the new instance*)
         newInstance = AssociationMap[
-            classData[class,"instanceDefine",#]&,
+            classData[class,"instanceCommonData",#]&,
             classData[class,"memberList"]
         ];
         (*intercept before defining the new instance*)
@@ -613,7 +617,7 @@ instanceReset`kernel[class_,instance_] :=
     Module[ {resetInstance},
         (*pre-store the reset instance*)
         resetInstance = AssociationMap[
-            classData[class,"instanceReset",#]&,
+            classData[class,"instanceCommonData",#]&,
             classData[class,"memberList"]
         ];
         (*intercept before reset the instance*)
