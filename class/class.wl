@@ -8,7 +8,7 @@ BeginPackage["lily`class`"];
 
 classUnset/@Keys[classData]//Quiet;
 Unprotect@@Names[$Context<>"*"];
-ClearAll@@DeleteCases[Names[$Context<>"*"],"classData"|"instanceDefaultData"];
+ClearAll@@DeleteCases[Names[$Context<>"*"],"classData"|"instanceData"|"instanceDefaultData"];
 
 
 (*class + instance + member + structure*) 
@@ -27,6 +27,8 @@ classUnset::usage =
 
 (*instance methods*)
 
+instanceData::usage = 
+    "store the data of instances with members.";
 instanceDefaultData::usage = 
     "store the data of default instance of class.";
 instanceDefault::usage = 
@@ -186,7 +188,7 @@ memberStructureInternal = <|
     "boolean"-><|
         "instanceAdd"->Or,
         "instanceDelete"->And,
-    	"memberStructureIdentity"->True,
+        "memberStructureIdentity"->True,
         "memberStructureUsage"->"Boolean value: add is Or and delete is And."
     |>,
     "string"-><|
@@ -294,7 +296,9 @@ memberStructureUnset[structure_] :=
 
 
 classData//initiate = <||>;
+instanceData//initiate = <||>;
 instanceDefaultData//initiate = <||>;
+
 
 classDefineQ[class_] :=
     KeyExistsQ[classData,class]===True;
@@ -357,7 +361,6 @@ classDefine`initiateClass[class_,memberList_,structureList_,commonValueList_,ext
         AssociateTo[
             classData,
             class-><|
-                "instanceData"-><||>,
                 "instanceCommonData"->commonValueAssoc,
                 "instanceExtraData"->extraValueAssoc,
                 "instanceProperty"-><||>,
@@ -367,6 +370,11 @@ classDefine`initiateClass[class_,memberList_,structureList_,commonValueList_,ext
                 "memberList"->memberList,
                 "isClassProtected"->False
             |>
+        ];
+        (*initiate the instance data.*)
+        AssociateTo[
+            instanceData,
+            class-><||>
         ];
         (*initiate and store the default instance of class in instanceDefaultData*)
         AssociateTo[
@@ -393,15 +401,11 @@ classUnset[class_] :=
                 Message[classUnset::classprotected],
             True,
                 (*remove the class data from classData*)
-                KeyDropFrom[
-                    classData,
-                    class
-                ];
+                KeyDropFrom[classData,class];
+                (*remove the instance data from instanceData*)
+                KeyDropFrom[instanceData,class];
                 (*remove the default instance of class from instanceDefaultData*)
-                KeyDropFrom[
-                    instanceDefaultData,
-                    class
-                ];
+                KeyDropFrom[instanceDefaultData,class];
         ];
     ];
 classUnset[input_Keys] :=
@@ -450,7 +454,7 @@ instanceDefineCheck["ifInstanceNotDefined"][class_,instanceList_] :=
     Module[ {instanceNotDefList},
         instanceNotDefList = Complement[
             instanceList,
-            Keys@classData[class,"instanceData"]
+            Keys@instanceData[class]
         ];
         If[ instanceNotDefList=!={},
             messageHideContext[instanceDefineCheck::insundef,instanceNotDefList];
@@ -462,7 +466,7 @@ instanceDefineCheck["ifInstanceHasDefined"][class_,instanceList_] :=
     Module[ {instanceHasDefList},
         instanceHasDefList = Intersection[
             instanceList,
-            Keys@classData[class,"instanceData"]
+            Keys@instanceData[class]
         ];
         If[ instanceHasDefList=!={},
             messageHideContext[instanceDefineCheck::insdef,instanceHasDefList];
@@ -499,7 +503,7 @@ instanceDefaultUpdate[class_] :=
         defaultInstance = Join[
             {classData[class,"instanceExtraData"]},
             Map[
-                classData[class,"instanceData",#]&,
+                instanceData[class,#]&,
                 classData[class,"instanceDefaultList"]
             ]
         ]//mergeByKey[functionListByStructure];
@@ -538,7 +542,7 @@ instanceDefine`kernel[class_,instance_,property_:Null] :=
         instancePreIntercept["instanceDefine"][class,instance,property];
         (*define the new instance*)
         AssociateTo[
-            classData[class,"instanceData"],
+            instanceData[class],
             instance->newInstance
         ];
         AssociateTo[
@@ -603,7 +607,7 @@ instanceReset`kernel[class_,instance_] :=
         instancePreIntercept["instanceReset"][class,instance];
         (*reset the instance*)
         AssociateTo[
-            classData[class,"instanceData"],
+            instanceData[class],
             instance->resetInstance
         ];
         (*intercept if necessary*)
@@ -631,7 +635,7 @@ instanceUnset`kernel[class_,instance_] :=
         (*intercept before unset the instance*)
         instancePreIntercept["instanceUnset"][class,instance];
         (*unset the instance*)
-        KeyDropFrom[classData[class,"instanceData"],instance];
+        KeyDropFrom[instanceData[class],instance];
         KeyDropFrom[classData[class,"instanceProperty"],instance];
         (*intercept if necessary*)
         instancePostIntercept["instanceUnset"][class,instance];
@@ -687,14 +691,14 @@ instanceAdd`kernel[class_,instance_,member_,elementList_] :=
     Module[ {list},
         (*pre-store the desired result*)
         list = classData[class,"instanceAdd",member][
-            classData[class,"instanceData",instance,member],
+            instanceData[class,instance,member],
             elementList
         ];
         (*intercept before adding to the instance*)
         instancePreIntercept["instanceAdd"][class,instance,member,list];
         (*add to the instance*)
         AssociateTo[
-            classData[class,"instanceData",instance],
+            instanceData[class,instance],
             member->list
         ];
         (*intercept if necessary*)
@@ -729,14 +733,14 @@ instanceDelete`kernel[class_,instance_,member_,elementList_] :=
     Module[ {list},
         (*pre-store the desired result*)
         list = classData[class,"instanceDelete",member][
-            classData[class,"instanceData",instance,member],
+            instanceData[class,instance,member],
             elementList
         ];
         (*intercept before deleting from the instance*)
         instancePreIntercept["instanceDelete"][class,instance,member,list];
         (*delete from the instance*)
         AssociateTo[
-            classData[class,"instanceData",instance],
+            instanceData[class,instance],
             member->list
         ];
         (*intercept if necessary*)
@@ -751,6 +755,6 @@ instanceDelete`kernel[class_,instance_,member_,elementList_] :=
 End[];
 
 Protect@@Names[$Context<>"*"];
-Unprotect["classData","instanceDefaultData"];
+Unprotect["classData","instanceData","instanceDefaultData"];
 
 EndPackage[];

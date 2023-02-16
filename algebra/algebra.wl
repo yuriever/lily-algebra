@@ -16,10 +16,11 @@ ClearAll@@Names[$Context<>"*"];
 
 
 {
-    classData,classDefine,classProtect,classUnset,
+    classData,instanceData,instanceDefaultData,
+    classDefine,classProtect,classUnset,
     instancePreIntercept,instancePostIntercept,
-    instanceDefaultData,instanceDefault,
-    instanceDefine,instanceReset,instanceUnset,
+    instanceDefine,instanceDefault,
+    instanceReset,instanceUnset,
     instanceAdd,instanceDelete
 };
 
@@ -178,9 +179,6 @@ Begin["`Private`"];
 (*lily`base`*)
 
 
-lengthEqualQ[lists___] :=
-    Equal@@Map[Length,{lists}];
-
 pink[expr_] :=
     Style[expr,RGBColor[1,0.5,0.5]];
 violet[expr_] :=
@@ -196,34 +194,9 @@ stripPattern[pattern_] :=
         )[$$pattern_,_]:>$$pattern
     };
 
-reserveSymbol//Attributes = {Listable};
-reserveSymbol[symbol_Symbol] :=
-    Module[ {},
-        Unprotect@symbol;
-        ClearAll@symbol;
-        symbol::usage =
-            "This symbol has been cleared and reserved.";
-        Protect@symbol;
-    ];
-reserveSymbol[input_] :=
-    input;
-
 hideContext/:MakeBoxes[hideContext[expr_],form_] := 
     Block[ {Internal`$ContextMarks = False},
         MakeBoxes[expr,form]
-    ];
-
-optionTableForm[] :=
-    Sequence[
-        TableSpacing->{2,2},
-        TableAlignments->{Left,Top}
-    ];
-    
-defaultStringTemplate[msg_String] :=
-    StringTemplate[
-        msg,
-        InsertionFunction->(Style[#,Pink]&),
-        CombinerFunction->(Style[#,RGBColor[0.5,0.5,1]]&)@*Row
     ];
     
 setArgumentCompletion[function_String,{args___}] :=
@@ -363,11 +336,11 @@ algebraDefine[algList:patternAlgList] :=
         (*set the auto-completion of algebra names*)
         setArgumentCompletion[
             {"algebraDefault","algebraReset","algebraUnset"},
-            {Keys@classData["algebra","instanceData"]}
+            {Keys@instanceData["algebra"]}
         ];
         setArgumentCompletion[
             {"algebraAdd","algebraDelete"},
-            {Keys@classData["algebra","instanceData"],classData["algebra","memberList"]}
+            {Keys@instanceData["algebra"],classData["algebra","memberList"]}
         ];
     ];
 algebraDefine[alg:patternAlg] :=
@@ -375,7 +348,7 @@ algebraDefine[alg:patternAlg] :=
 
 algebraDefineQ[alg:patternAlg] :=
     KeyExistsQ[
-        classData["algebra","instanceData"],
+        instanceData["algebra"],
         alg
     ];
 algebraDefineQ[_] = False;
@@ -397,7 +370,7 @@ algebraDefineInternal[] :=
 algebraDefault[algList:patternAlgList] :=
     Module[ {},
         instanceDefault["algebra",algList];
-        Print@defaultStringTemplate["The default algebras: \n``"]@algList;
+        Print["The default algebras: ",Row[algList,", "],"."];
     ];
 algebraDefault[alg:patternAlg] :=
     algebraDefault[{alg}];
@@ -447,28 +420,32 @@ algebraDelete[alg:patternAlg][assoc_] :=
 
 algebraShow[alg:patternAlg]/;algebraDefineQ[alg] :=
     algebraShow`kernel[
-        defaultStringTemplate["Algebra: \n``"]@alg,
-        classData["algebra","instanceData",alg,"operator"],
-        classData["algebra","instanceData",alg,"relation"],
-        classData["algebra","instanceData",alg,"printing"]
+        Print["The algebra: ",alg,"."];
+        instanceData["algebra",alg,"operator"],
+        instanceData["algebra",alg,"relation"],
+        instanceData["algebra",alg,"printing"]
     ];
 algebraShow[] :=
     algebraShow`kernel[
-        defaultStringTemplate["Default algebras: \n``"]@classData["algebra","instanceDefaultList"],
+        Print["The default algebras: ",Row[classData["algebra","instanceDefaultList"],", "],"."];
         instanceDefaultData["algebra","operator"],
         instanceDefaultData["algebra","relation"],
         instanceDefaultData["algebra","printing"]
     ];
-algebraShow`kernel[title_,operatorList_,relationList_,printingList_] :=
-    TableForm[{
-        title,
-        violet@"Operators:",
-        operatorList//Row[#,Spacer[4]]&,
-        violet@"Relations:",
-        relationList//Map[hideContext,#,{1}]&//TableForm,
-        violet@"Printings:",
-        printingList//Map[hideContext,#,{1}]&//TableForm
-    },TableDepth->1,optionTableForm[]];
+algebraShow`kernel[operatorList_,relationList_,printingList_] :=
+    TableForm[
+        {
+            violet@"Operators:",
+            operatorList//Row[#,Spacer[4]]&,
+            violet@"Relations:",
+            relationList//Map[hideContext,#,{1}]&//TableForm,
+            violet@"Printings:",
+            printingList//Map[hideContext,#,{1}]&//TableForm
+        },
+        TableDepth->1,
+        TableSpacing->{2,2},
+        TableAlignments->{Left,Top}
+    ];
 
 
 (* ::Subsection:: *)
@@ -476,7 +453,7 @@ algebraShow`kernel[title_,operatorList_,relationList_,printingList_] :=
 
 
 algebraDefine[] :=
-    Keys@classData["algebra","instanceData"];
+    Keys@instanceData["algebra"];
 algebraDefault[] :=
     classData["algebra","instanceDefaultList"];
 
@@ -514,11 +491,11 @@ printing[] :=
     instanceDefaultData["algebra","printing"];
 
 operator[alg:patternAlg] :=
-    classData["algebra","instanceData",alg,"operator"];
+    instanceData["algebra",alg,"operator"];
 relation[alg:patternAlg] :=
-    classData["algebra","instanceData",alg,"relation"];
+    instanceData["algebra",alg,"relation"];
 printing[alg:patternAlg] :=
-    classData["algebra","instanceData",alg,"printing"];
+    instanceData["algebra",alg,"printing"];
 
 
 (* ::Subsection:: *)
